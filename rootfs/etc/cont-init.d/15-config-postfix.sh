@@ -47,8 +47,8 @@ append_dot_mydomain = no
 virtual_transport = anonaddy:
 virtual_mailbox_domains = ${VBOX_DOMAINS},mysql:/etc/postfix/mysql-virtual-alias-domains-and-subdomains.cf
 
-relayhost = ${POSTFIX_RELAYHOST}
-mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
+relayhost = ${POSTFIX_RELAYHOST}:${POSTFIX_RELAYPORT}
+mynetworks = ${POSTFIX_NETWORKS}
 mailbox_size_limit = 0
 recipient_delimiter = +
 
@@ -65,8 +65,8 @@ smtpd_helo_restrictions =
     permit_mynetworks,
     permit_sasl_authenticated,
     reject_invalid_helo_hostname,
-    reject_non_fqdn_helo_hostname,
-    reject_unknown_helo_hostname
+    reject_non_fqdn_helo_hostname
+    #reject_unknown_helo_hostname
 
 smtpd_sender_restrictions =
     permit_mynetworks,
@@ -169,7 +169,7 @@ EOL
 
   cat >/etc/postfix/sasl_passwd <<EOL
 
-${POSTFIX_RELAYHOST} ${POSTFIX_RELAYHOST_USERNAME}:${POSTFIX_RELAYHOST_PASSWORD}
+${POSTFIX_RELAYHOST}:${POSTFIX_RELAYPORT} ${POSTFIX_RELAYHOST_USERNAME}:${POSTFIX_RELAYHOST_PASSWORD}
 EOL
 
   chmod 600 /etc/postfix/sasl_passwd
