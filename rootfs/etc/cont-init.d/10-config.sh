@@ -45,11 +45,10 @@ if [ -z "$DB_PASSWORD" ]; then
   echo >&2 "ERROR: Either DB_PASSWORD or DB_PASSWORD_FILE must be defined"
   exit 1
 fi
-dbcmd="mysql -h ${DB_HOST} -P ${DB_PORT} -u "${DB_USERNAME}" "-p${DB_PASSWORD}""
-
+dbcmd="$(PGPASSWORD=${DB_PASSWORD} psql -h ${DB_HOST} -p ${DB_PORT} -U ${DB_USERNAME} -lqt | cut -d \| -f 1 | grep -qw ${DB_DATABASE})"
 echo "Waiting ${DB_TIMEOUT}s for database to be ready..."
 counter=1
-while ! ${dbcmd} -e "show databases;" >/dev/null 2>&1; do
+while ! ${dbcmd} >/dev/null 2>&1; do
   sleep 1
   counter=$((counter + 1))
   if [ ${counter} -gt ${DB_TIMEOUT} ]; then

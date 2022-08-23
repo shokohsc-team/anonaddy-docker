@@ -45,7 +45,7 @@ readme_directory = no
 append_dot_mydomain = no
 
 virtual_transport = anonaddy:
-virtual_mailbox_domains = ${VBOX_DOMAINS},mysql:/etc/postfix/mysql-virtual-alias-domains-and-subdomains.cf
+virtual_mailbox_domains = ${VBOX_DOMAINS},pgsql:/etc/postfix/pgsql-virtual-alias-domains-and-subdomains.cf
 
 relayhost = ${POSTFIX_RELAYHOST}:${POSTFIX_RELAYPORT}
 mynetworks = ${POSTFIX_NETWORKS}
@@ -78,7 +78,7 @@ smtpd_sender_restrictions =
 smtpd_recipient_restrictions =
     permit_mynetworks,
     reject_unauth_destination,
-    check_recipient_access mysql:/etc/postfix/mysql-recipient-access.cf,
+    check_recipient_access pgsql:/etc/postfix/pgsql-recipient-access.cf,
     #check_policy_service unix:private/policyd-spf
     reject_rhsbl_helo dbl.spamhaus.org,
     reject_rhsbl_reverse_client dbl.spamhaus.org,
@@ -188,38 +188,39 @@ for domain in $ANONADDY_ALL_DOMAINS; do
 done
 
 echo "Creating Postfix virtual alias domains and subdomains configuration"
-cat >/etc/postfix/mysql-virtual-alias-domains-and-subdomains.cf <<EOL
+cat >/etc/postfix/pgsql-virtual-alias-domains-and-subdomains.cf <<EOL
 user = ${DB_USERNAME}
 password = ${DB_PASSWORD}
 hosts = ${DB_HOST}:${DB_PORT}
 dbname = ${DB_DATABASE}
 query = SELECT (SELECT 1 FROM usernames WHERE ${QUERY_USERNAMES}) AS usernames, (SELECT 1 FROM domains WHERE domain = '%s' AND domain_verified_at IS NOT NULL) AS domains LIMIT 1;
 EOL
-chmod o= /etc/postfix/mysql-virtual-alias-domains-and-subdomains.cf
-chgrp postfix /etc/postfix/mysql-virtual-alias-domains-and-subdomains.cf
+chmod o= /etc/postfix/pgsql-virtual-alias-domains-and-subdomains.cf
+chgrp postfix /etc/postfix/pgsql-virtual-alias-domains-and-subdomains.cf
 
 echo "Creating Postfix recipient access configuration"
-cat >/etc/postfix/mysql-recipient-access.cf <<EOL
+cat >/etc/postfix/pgsql-recipient-access.cf <<EOL
 user = ${DB_USERNAME}
 password = ${DB_PASSWORD}
 hosts = ${DB_HOST}:${DB_PORT}
 dbname = ${DB_DATABASE}
 query = CALL check_access('%s')
 EOL
-chmod o= /etc/postfix/mysql-recipient-access.cf
-chgrp postfix /etc/postfix/mysql-recipient-access.cf
+chmod o= /etc/postfix/pgsql-recipient-access.cf
+chgrp postfix /etc/postfix/pgsql-recipient-access.cf
 
 echo "Checking Postfix hostname"
 postconf myhostname
 
 echo "Creating check_access stored procedure"
-mysql -h ${DB_HOST} -P ${DB_PORT} -u "${DB_USERNAME}" "-p${DB_PASSWORD}" ${DB_DATABASE} <<EOL
+PGPASSWORD="${DB_PASSWORD}" psql -h ${DB_HOST} -p ${DB_PORT} -U "${DB_USERNAME}" --dbname=${DB_DATABASE} <<EOL
 DELIMITER //
 
-DROP PROCEDURE IF EXISTS \`block_alias\`//
-DROP PROCEDURE IF EXISTS \`check_access\`//
+DROP PROCEDURE IF EXISTS "block_alias"//
+DROP PROCEDURE IF EXISTS "check_access"//
 
-CREATE PROCEDURE \`check_access\`(alias_email VARCHAR(254) charset utf8)
+CREATE PROCEDURE "check_access"(alias_email VARCHAR(254) charset utf8)
+
 BEGIN
     DECLARE no_alias_exists int(1);
     DECLARE alias_action varchar(30) charset utf8;

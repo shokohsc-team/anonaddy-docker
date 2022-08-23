@@ -14,7 +14,8 @@ RUN apk --no-cache add \
     gpgme \
     imagemagick \
     libgd \
-    mysql-client \
+    postgresql14-client \
+    postgresql-dev \
     nginx \
     openssl \
     php81 \
@@ -32,7 +33,7 @@ RUN apk --no-cache add \
     php81-opcache \
     php81-openssl \
     php81-pdo \
-    php81-pdo_mysql \
+    php81-pdo_pgsql \
     php81-pecl-imagick \
     php81-pecl-mailparse \
     php81-phar \
@@ -47,7 +48,7 @@ RUN apk --no-cache add \
     php81-zip \
     php81-zlib \
     postfix \
-    postfix-mysql \
+    postfix-pgsql \
     rspamd \
     rspamd-controller \
     rspamd-proxy \
